@@ -23,7 +23,7 @@ A full-stack food delivery application built with React Native (Expo) and Node.j
 
 ## Prerequisites
 
-- Node.js (v14 or later)
+- Node.js **v20 or later** (required by Expo SDK 54 / React Native 0.81)
 - A PostgreSQL database — a free [Supabase](https://supabase.com) project, or local Postgres
 - Expo Go app (for testing on device) or Android/iOS Simulator
 
@@ -78,6 +78,16 @@ A full-stack food delivery application built with React Native (Expo) and Node.j
     ```
 4.  Scan the QR code with Expo Go or press `a` for Android Emulator / `i` for iOS Simulator.
 
+### Connecting the Frontend to the Backend
+
+The frontend resolves the backend URL automatically (`src/api.js`) — no manual config needed in most setups:
+
+- **Physical device (Expo Go)**: uses your computer's LAN IP, derived from the Expo dev-server host.
+- **Android emulator**: uses `http://10.0.2.2:4000`.
+- **iOS simulator / web**: falls back to `http://localhost:4000`.
+
+The backend is expected on port **4000**. For device testing, make sure your phone and computer are on the same Wi-Fi network. If you change the backend `PORT`, update the port used in `src/api.js` to match.
+
 ## Accounts & Roles
 
 Access is determined by a `role` field on each user (`user` or `admin`), not by email.
@@ -88,6 +98,9 @@ account and prints their credentials in the console when you run `npm run seed`.
 To promote another account, log in as an admin → **Users** tab → tap the shield icon.
 
 ## API Endpoints
+
+### Health
+- `GET /health` — service health check (returns `{ "status": "ok" }`)
 
 ### Auth
 - `POST /api/auth/register` — create an account
@@ -108,6 +121,8 @@ To promote another account, log in as an admin → **Users** tab → tap the shi
 - `POST` / `PUT /:id` / `DELETE /:id` on `/api/admin/restaurants` — manage restaurants
 - `POST` / `PUT /:id` / `DELETE /:id` on `/api/admin/menu-items` — manage menu items
 - `GET /api/admin/users` · `PATCH /api/admin/users/:id/role` — list users & change roles
+
+Valid order statuses (used by `PATCH /api/admin/orders/:id/status`): `pending`, `preparing`, `on_the_way`, `delivered`, `cancelled`.
 
 ## Project Structure
 
