@@ -56,9 +56,7 @@ A full-stack food delivery application built with React Native (Expo) and Node.j
     ```bash
     npm run seed
     ```
-    This prints the login credentials:
-    - **Admin**: `admin@food.app` / `admin123`
-    - **User**: `user@food.app` / `user123`
+    The seed script prints the admin and demo-user login credentials in the console.
 6.  Start the server:
     ```bash
     npm run dev
@@ -80,18 +78,52 @@ A full-stack food delivery application built with React Native (Expo) and Node.j
     ```
 4.  Scan the QR code with Expo Go or press `a` for Android Emulator / `i` for iOS Simulator.
 
+## Accounts & Roles
+
+Access is determined by a `role` field on each user (`user` or `admin`), not by email.
+After login, admins are routed to the Admin Dashboard and regular users to the customer app.
+New sign-ups are always `user`. The seed script creates one admin and one demo-user
+account and prints their credentials in the console when you run `npm run seed`.
+
+To promote another account, log in as an admin → **Users** tab → tap the shield icon.
+
+## API Endpoints
+
+### Auth
+- `POST /api/auth/register` — create an account
+- `POST /api/auth/login` — log in (returns a JWT + user)
+- `GET /api/auth/me` — current user *(auth required)*
+
+### Restaurants & Orders
+- `GET /api/restaurants` — list restaurants
+- `GET /api/restaurants/:id` — restaurant with its menu
+- `GET /api/restaurants/:id/menu` — menu items
+- `POST /api/orders` — place an order
+- `GET /api/orders` — current user's orders
+- `GET /api/orders/:id/status` — order status
+
+### Admin *(require `admin` role)*
+- `GET /api/admin/stats` — dashboard totals and orders-by-status
+- `GET /api/admin/orders` · `PATCH /api/admin/orders/:id/status` — view & update orders
+- `POST` / `PUT /:id` / `DELETE /:id` on `/api/admin/restaurants` — manage restaurants
+- `POST` / `PUT /:id` / `DELETE /:id` on `/api/admin/menu-items` — manage menu items
+- `GET /api/admin/users` · `PATCH /api/admin/users/:id/role` — list users & change roles
+
 ## Project Structure
 
-- `backend/`: Node.js Express API
-    - `controllers/`: Request handlers
-    - `models/`: Sequelize models
-    - `routes/`: API route definitions
-    - `config/`: Database configuration
-- `frontend/`: React Native Expo App
-    - `src/screens/`: Application screens
-    - `src/navigation/`: Navigation configuration
+- `backend/`: Node.js + Express API (Prisma ORM)
+    - `controllers/`: Request handlers (`auth`, `restaurant`, `order`, `admin`) + `seed.js`
+    - `routes/`: API route definitions (incl. `admin.routes.js`)
+    - `prisma/`: Prisma schema (`schema.prisma`)
+    - `lib/`: Prisma client singleton
+    - `utils/`: Auth middleware (JWT, `requireAdmin`)
+- `frontend/`: React Native Expo app
+    - `src/screens/`: Customer screens (Home, Menu, Cart, Orders, Profile, UserDashboard)
+    - `src/screens/admin/`: Admin screens (Dashboard, Orders, Restaurants, Menu, Users)
+    - `src/navigation/`: Role-based navigation
     - `src/context/`: React Context (Auth)
-    - `src/config/`: Configuration files (Images)
+    - `src/config/`: Image mappings
+    - `src/api.js`: Axios API client
     - `assets/`: Images and icons
 
 ## License
