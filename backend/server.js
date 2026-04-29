@@ -14,21 +14,24 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
-const { testConnection } = require('./config/db');
+const prisma = require('./lib/prisma');
 const restaurantRoutes = require('./routes/restaurant.routes');
 const orderRoutes = require('./routes/order.routes');
 const authRoutes = require('./routes/auth.routes');
+const adminRoutes = require('./routes/admin.routes');
 app.use('/api/auth', authRoutes);
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 4000;
-const { sequelize } = require('./models');
 
 app.listen(PORT, async () => {
-  await testConnection();
-  await sequelize.sync();
+  try {
+    await prisma.$connect();
+    console.log('Database connection has been established successfully.');
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+  }
   console.log(`Server running on port ${PORT}`);
 });
-
-
