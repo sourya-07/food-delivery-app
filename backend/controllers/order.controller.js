@@ -1,50 +1,42 @@
-const { sequelize, Order, OrderItem, MenuItem, Restaurant } = require('../models');
+const prisma = require('../lib/prisma');
 
 exports.createOrder = async (req, res) => {
-  const t = await sequelize.transaction();
   try {
     const { restaurantId, items } = req.body; // items: [{ menuItemId, quantity }]
     if (!restaurantId || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Invalid payload' });
     }
 
-    const menuItems = await MenuItem.findAll({
-      where: { id: items.map(i => i.menuItemId) },
-      transaction: t,
-    });
+    const ids = items.map((i) => Number(i.menuItemId));
+    const menuItems = await prisma.menuItem.findMany({ where: { id: { in: ids } } });
     if (menuItems.length !== items.length) {
-      await t.rollback();
       return res.status(400).json({ message: 'Some menu items not found' });
     }
 
     const totalPrice = items.reduce((sum, i) => {
-      const mi = menuItems.find(m => m.id === i.menuItemId);
+      const mi = menuItems.find((m) => m.id === Number(i.menuItemId));
       return sum + Number(mi.price) * i.quantity;
     }, 0);
 
     const userId = req.user?.id || null;
-    const order = await Order.create({
-      userId,
-      restaurantId,
-      status: 'pending',
-      totalPrice,
-    }, { transaction: t });
+    const order = await prisma.order.create({
+      data: {
+        userId,
+        restaurantId: Number(restaurantId),
+        status: 'pending',
+        totalPrice,
+        items: {
+          create: items.map((i) => {
+            const mi = menuItems.find((m) => m.id === Number(i.menuItemId));
+            return { menuItemId: mi.id, quantity: i.quantity, price: mi.price };
+          }),
+        },
+      },
+    });
 
-    for (const i of items) {
-      const mi = menuItems.find(m => m.id === i.menuItemId);
-      await OrderItem.create({
-        orderId: order.id,
-        menuItemId: mi.id,
-        quantity: i.quantity,
-        price: mi.price,
-      }, { transaction: t });
-    }
-
-    await t.commit();
     res.status(201).json({ orderId: order.id });
   } catch (err) {
     console.error(err);
-    await t.rollback();
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -52,13 +44,13 @@ exports.createOrder = async (req, res) => {
 exports.getMyOrders = async (req, res) => {
   try {
     const where = req.user?.id ? { userId: req.user.id } : {};
-    const orders = await Order.findAll({
+    const orders = await prisma.order.findMany({
       where,
-      include: [
-        { model: Restaurant, as: 'restaurant' },
-        { model: MenuItem, as: 'items' },
-      ],
-      order: [['createdAt', 'DESC']],
+      include: {
+        restaurant: true,
+        items: { include: { menuItem: true } },
+      },
+      orderBy: { createdAt: 'desc' },
     });
     res.json(orders);
   } catch (err) {
@@ -69,9 +61,9 @@ exports.getMyOrders = async (req, res) => {
 
 exports.getOrderStatus = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
     const where = req.user?.id ? { id, userId: req.user.id } : { id };
-    const order = await Order.findOne({ where });
+    const order = await prisma.order.findFirst({ where });
     if (!order) return res.status(404).json({ message: 'Not found' });
     res.json({ status: order.status });
   } catch (err) {
@@ -79,5 +71,3 @@ exports.getOrderStatus = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
-

@@ -7,7 +7,7 @@ function optionalAuth(req, _res, next) {
     if (!token) return next();
     const secret = process.env.JWT_SECRET || 'dev_secret';
     const payload = jwt.verify(token, secret);
-    req.user = { id: payload.id, email: payload.email };
+    req.user = { id: payload.id, email: payload.email, role: payload.role };
   } catch (_err) {
     // ignore token errors for optional auth
   }
@@ -21,13 +21,20 @@ function requiredAuth(req, res, next) {
     if (!token) return res.status(401).json({ message: 'Unauthorized' });
     const secret = process.env.JWT_SECRET || 'dev_secret';
     const payload = jwt.verify(token, secret);
-    req.user = { id: payload.id, email: payload.email };
+    req.user = { id: payload.id, email: payload.email, role: payload.role };
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 }
 
-module.exports = { optionalAuth, requiredAuth };
+function requireAdmin(req, res, next) {
+  return requiredAuth(req, res, () => {
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+    next();
+  });
+}
 
-
+module.exports = { optionalAuth, requiredAuth, requireAdmin };

@@ -1,8 +1,8 @@
-const { Restaurant, MenuItem } = require('../models');
+const prisma = require('../lib/prisma');
 
 exports.getRestaurants = async (_req, res) => {
   try {
-    const restaurants = await Restaurant.findAll();
+    const restaurants = await prisma.restaurant.findMany({ orderBy: { id: 'asc' } });
     res.json(restaurants);
   } catch (err) {
     console.error(err);
@@ -12,9 +12,10 @@ exports.getRestaurants = async (_req, res) => {
 
 exports.getRestaurantById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const restaurant = await Restaurant.findByPk(id, {
-      include: { model: MenuItem, as: 'menuItems' },
+    const id = Number(req.params.id);
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id },
+      include: { menuItems: true },
     });
     if (!restaurant) return res.status(404).json({ message: 'Not found' });
     res.json(restaurant);
@@ -26,13 +27,14 @@ exports.getRestaurantById = async (req, res) => {
 
 exports.getMenuByRestaurant = async (req, res) => {
   try {
-    const { id } = req.params;
-    const items = await MenuItem.findAll({ where: { restaurantId: id } });
+    const restaurantId = Number(req.params.id);
+    const items = await prisma.menuItem.findMany({
+      where: { restaurantId },
+      orderBy: { id: 'asc' },
+    });
     res.json(items);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };
-
-
