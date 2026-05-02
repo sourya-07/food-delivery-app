@@ -81,4 +81,60 @@ export async function getOrderStatus(orderId) {
 
 export async function logout() { await AsyncStorage.removeItem('token'); }
 
+// ---------- Admin ----------
+export async function getAdminStats() {
+  const res = await api.get('/admin/stats');
+  return res.data;
+}
+
+export async function getAdminOrders() {
+  const res = await api.get('/admin/orders');
+  return res.data;
+}
+
+export async function updateOrderStatus(orderId, status) {
+  const res = await api.patch(`/admin/orders/${orderId}/status`, { status });
+  return res.data;
+}
+
+export async function createRestaurant(payload) {
+  const res = await api.post('/admin/restaurants', payload);
+  return res.data;
+}
+
+export async function updateRestaurant(id, payload) {
+  const res = await api.put(`/admin/restaurants/${id}`, payload);
+  return res.data;
+}
+
+export async function deleteRestaurant(id) {
+  const res = await api.delete(`/admin/restaurants/${id}`);
+  return res.data;
+}
+
+export async function createMenuItem(payload) {
+  const res = await api.post('/admin/menu-items', payload);
+  return res.data;
+}
+
+export async function updateMenuItem(id, payload) {
+  const res = await api.put(`/admin/menu-items/${id}`, payload);
+  return res.data;
+}
+
+export async function deleteMenuItem(id) {
+  const res = await api.delete(`/admin/menu-items/${id}`);
+  return res.data;
+}
+
+export async function getAdminUsers() {
+  const res = await api.get('/admin/users');
+  return res.data;
+}
+
+export async function updateUserRole(id, role) {
+  const res = await api.patch(`/admin/users/${id}/role`, { role });
+  return res.data;
+}
+
 

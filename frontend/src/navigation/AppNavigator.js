@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ActivityIndicator, View } from 'react-native';
-import { Home, ShoppingCart, List, User } from 'lucide-react-native';
+import { Home, ShoppingCart, List, User, LayoutDashboard, Store, Users } from 'lucide-react-native';
 
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { theme } from '../theme';
@@ -15,43 +15,50 @@ import OrderStatusScreen from '../screens/OrderStatusScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import OrderSuccessScreen from '../screens/OrderSuccessScreen'; // Will create this next
+import OrderSuccessScreen from '../screens/OrderSuccessScreen';
+import UserDashboardScreen from '../screens/UserDashboardScreen';
+import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
+import AdminOrdersScreen from '../screens/admin/AdminOrdersScreen';
+import AdminRestaurantsScreen from '../screens/admin/AdminRestaurantsScreen';
+import AdminMenuScreen from '../screens/admin/AdminMenuScreen';
+import AdminUsersScreen from '../screens/admin/AdminUsersScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const AuthStack = createNativeStackNavigator();
 
-function MainTabs() {
+const tabScreenOptions = {
+  headerStyle: { backgroundColor: theme.colors.surface },
+  headerTintColor: theme.colors.text,
+  tabBarStyle: { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border },
+  tabBarActiveTintColor: theme.colors.primary,
+  tabBarInactiveTintColor: theme.colors.textSecondary,
+};
+
+function makeTabIcon(IconComponent) {
+  return ({ color, size }) => <IconComponent color={color} size={size} />;
+}
+
+function UserTabs() {
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerStyle: { backgroundColor: theme.colors.surface },
-        headerTintColor: theme.colors.text,
-        tabBarStyle: { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border },
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textSecondary,
-        tabBarIcon: ({ color, size }) => {
-          let IconComponent;
+    <Tab.Navigator screenOptions={tabScreenOptions}>
+      <Tab.Screen name="Dashboard" component={UserDashboardScreen} options={{ tabBarIcon: makeTabIcon(LayoutDashboard) }} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarIcon: makeTabIcon(Home) }} />
+      <Tab.Screen name="Cart" component={CartScreen} options={{ tabBarIcon: makeTabIcon(ShoppingCart) }} />
+      <Tab.Screen name="Orders" component={OrderStatusScreen} options={{ tabBarIcon: makeTabIcon(List) }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarIcon: makeTabIcon(User) }} />
+    </Tab.Navigator>
+  );
+}
 
-          if (route.name === 'Home') {
-            IconComponent = Home;
-          } else if (route.name === 'Cart') {
-            IconComponent = ShoppingCart;
-          } else if (route.name === 'Orders') {
-            IconComponent = List;
-          } else if (route.name === 'Profile') {
-            IconComponent = User;
-          }
-
-          return IconComponent ? <IconComponent color={color} size={size} /> : null;
-        },
-      })}
-    >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Cart" component={CartScreen} />
-      <Tab.Screen name="Orders" component={OrderStatusScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
-    </Tab.Navigator >
+function AdminTabs() {
+  return (
+    <Tab.Navigator screenOptions={tabScreenOptions}>
+      <Tab.Screen name="Dashboard" component={AdminDashboardScreen} options={{ tabBarIcon: makeTabIcon(LayoutDashboard) }} />
+      <Tab.Screen name="Orders" component={AdminOrdersScreen} options={{ tabBarIcon: makeTabIcon(List) }} />
+      <Tab.Screen name="Restaurants" component={AdminRestaurantsScreen} options={{ tabBarIcon: makeTabIcon(Store) }} />
+      <Tab.Screen name="Users" component={AdminUsersScreen} options={{ tabBarIcon: makeTabIcon(Users) }} />
+    </Tab.Navigator>
   );
 }
 
@@ -75,6 +82,8 @@ function AppContent() {
     );
   }
 
+  const isAdmin = user?.role === 'admin';
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{
@@ -83,11 +92,18 @@ function AppContent() {
         contentStyle: { backgroundColor: theme.colors.background }
       }}>
         {user ? (
-          <>
-            <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
-            <Stack.Screen name="Menu" component={MenuScreen} />
-            <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} options={{ headerShown: false }} />
-          </>
+          isAdmin ? (
+            <>
+              <Stack.Screen name="AdminMain" component={AdminTabs} options={{ headerShown: false }} />
+              <Stack.Screen name="AdminMenu" component={AdminMenuScreen} options={{ title: 'Manage Menu' }} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="Main" component={UserTabs} options={{ headerShown: false }} />
+              <Stack.Screen name="Menu" component={MenuScreen} />
+              <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} options={{ headerShown: false }} />
+            </>
+          )
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} options={{ headerShown: false }} />
         )}
@@ -103,5 +119,3 @@ export default function AppNavigator() {
     </AuthProvider>
   );
 }
-
-
